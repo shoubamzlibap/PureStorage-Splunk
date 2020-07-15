@@ -255,8 +255,11 @@ class PureStorageREST(Script):
         volumes_details = merge_lists(volumes_details, connection.list_volumes(space=True), 'name')
         volumes_details = merge_lists(volumes_details, connection.list_volumes(action='monitor'), 'name')
         for row in volumes_details:
-            source = row.get('source')
-            del row['source']
+            source = row.get('source', 'NO_SOURCE_KEY')
+            if source != 'NO_SOURCE_KEY':
+                del row['source']
+            else:
+                source = None
             row['source_volume'] = source
         self.write_events(ew, array, volumes_details, input_name, source=Source.source_volume,
                           sourcetype=Source.sourcetype)
@@ -364,7 +367,7 @@ class PureStorageREST(Script):
 
     def encrypt_password(self, username, password, session_key):
         try:
-			# If the credential already exists, delte it.
+        # If the credential already exists, delte it.
             for storage_password in self.service.storage_passwords:
                 if storage_password.username == username:
                     self.service.storage_passwords.delete(username=storage_password.username)
@@ -388,10 +391,10 @@ class PureStorageREST(Script):
             raise Exception("Error updating inputs.conf: %s" % str(e))
 
     def get_password(self, session_key, username):
-		# Retrieve the password from the storage/passwords endpoint	
-		for storage_password in self.service.storage_passwords:
-			if storage_password.username == username:
-				return storage_password.content.clear_password
+    # Retrieve the password from the storage/passwords endpoint	
+        for storage_password in self.service.storage_passwords:
+            if storage_password.username == username:
+                return storage_password.content.clear_password
 
     def stream_events(self, inputs, ew):
         """
